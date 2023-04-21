@@ -77,6 +77,10 @@ edges = extract_edge_from_xml_file(edge_file_path)
 reversed_edges = {tuple(value) : key for key, value in edges.items()}
 lengths = extract_road_lengths(edge_file_path)
 
+origin_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
+destination_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
+main_edges = ['r1_0_1', 'r1_1_0', 'r2_1_2', 'r2_2_1', 'r3_2_3', 'r3_3_2', 'r4_3_4', 'r4_4_3', 'r5_4_1', 'r5_1_4']
+
 def bfs_shortest_paths(start, end, graph=graph):
     """
     graph와 시작 노드, 끝 노드가 있을때 모든 최단경로를 출력하는 함수
@@ -105,5 +109,12 @@ def bfs_shortest_paths(start, end, graph=graph):
     
     return paths[end]
 
-origin_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
-destination_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
+def get_shortest_edge_distance(input_list):
+    shortest_path = []
+    shortest_length = 0
+    for i in range(len(input_list)-1):
+        temp = reversed_edges.get(tuple(input_list[i:i+2]))
+        shortest_path.append(temp)
+        shortest_length += lengths[temp]
+    
+    return shortest_path, shortest_length
