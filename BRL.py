@@ -70,7 +70,7 @@ def extract_road_lengths(file_path):
     
     return lengths
 
-
+# ----- 모델링에 사용할 전역 변수 입력 ----- #
 graph = extract_graph_from_xml_file(edge_file_path)
 position = extract_positions_from_xml_file(node_file_path)
 edges = extract_edge_from_xml_file(edge_file_path)
@@ -110,6 +110,7 @@ def bfs_shortest_paths(start, end, graph=graph):
     return paths[end]
 
 def get_shortest_edge_distance(input_list):
+    # 위에 bfs_shortest_paths로 구한 결과를 edge 결과로 바꿔줌.
     shortest_path = []
     shortest_length = 0
     for i in range(len(input_list)-1):
@@ -118,3 +119,58 @@ def get_shortest_edge_distance(input_list):
         shortest_length += lengths[temp]
     
     return shortest_path, shortest_length
+
+def return_all_routes(start_node, graph=graph):
+    # start_node를 받으면 그 start node를 origin node로 하는 모든 최단경로 만듬
+    result = []
+    temp = copy.deepcopy(origin_nodes)
+    temp.remove(start_node)
+    for i in temp:
+        routes = bfs_shortest_paths(start=start_node, end=i)
+        for j in routes:
+            shortest_path, _ = get_shortest_edge_distance(j)
+            result.append(shortest_path)
+    return result
+
+def get_all_shortest_paths():
+    all_shortest_paths = []
+    for start_node in origin_nodes:
+        temps = return_all_routes(start_node)
+        for temp in temps:
+            if temp not in all_shortest_paths:
+                all_shortest_paths.append(temp)
+    filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
+    return filtered_list
+
+all_shortest_paths = get_all_shortest_paths() # 모든 최단 경로 출력
+
+def filter_routes(target_edge, start_node):
+    # 특정 start node를 origin node로 했을 때 target_edge가 포함된 최단경로만 나오도록 함.
+    all_routes = return_all_routes(start_node)
+    filtered_routes = []
+    for route in all_routes:
+        if target_edge in route:
+            filtered_routes.append(route)
+    return filtered_routes
+
+def get_edge_include_routes(target_edge):
+    # 우리가 조사할 target edge를 입력했을때 그 target edge를 포함하는 모든 경로들 나옴.
+    results = []
+    for start_node in origin_nodes:
+        all_routes = filter_routes(target_edge, start_node)
+        for j in all_routes:
+            if j != None:
+                results.append(j)
+    return results
+
+def get_p_matrix():
+    p_matrix = [[0] * 66 for _ in range(10)]
+    for j in range(len(all_shortest_paths)):
+        shortest_paths = all_shortest_paths[j]
+        for i in range(len(main_edges)):
+            target_edge = main_edges[i]
+            if target_edge in shortest_paths:
+                p_matrix[i][j] = 1
+    return np.array(p_matrix)
+
+p_matrix = get_p_matrix()
