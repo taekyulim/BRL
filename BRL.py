@@ -132,7 +132,23 @@ def return_all_routes(start_node, graph=graph):
             result.append(shortest_path)
     return result
 
+def return_all_lengths(start_node, graph=graph):
+    # start_node를 받으면 그 start node를 origin node로 하는 모든 최단경로의 길이를 반환
+    result = []
+    temp = copy.deepcopy(origin_nodes)
+    temp.remove(start_node)
+    for i in temp:
+        routes = bfs_shortest_paths(start = start_node, end=i)
+        for j in routes:
+            _, shortest_length = get_shortest_edge_distance(j)
+            result.append(shortest_length)
+    return result
+
 def get_all_shortest_paths():
+    """모든 최단 경로들을 반환하는 함수. 
+    이때 메인 도로 'r{number}_{number}_{number}' 를 포함하지 않은 최단경로는 제거 하였음.
+    그 결과 66개의 최단 경로가 나옴.
+    """
     all_shortest_paths = []
     for start_node in origin_nodes:
         temps = return_all_routes(start_node)
@@ -142,7 +158,26 @@ def get_all_shortest_paths():
     filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
     return filtered_list
 
+
 all_shortest_paths = get_all_shortest_paths() # 모든 최단 경로 출력
+
+def get_all_shortest_lengths():
+    """
+    모든 최단 경로의 길이들을 반환 하는 함수.
+    인덱스를 바탕으로 경로와 길이에 접근 가능.
+    딕셔너리로 안하는 이유는 메모리 문제.
+    """
+    all_shortest_lengths = []
+    for start_node in origin_nodes:
+        temps = return_all_lengths(start_node)
+        for temp in temps:
+            if temp > 500:
+            # 500 보다 큰 경우에는 subnode에 의해 생성되는 거리 필터링 가능.
+            # 이거는 추후 논의 해볼 것.
+                all_shortest_lengths.append(temp)
+    return all_shortest_lengths
+
+all_shortest_lengths = get_all_shortest_lengths()
 
 def filter_routes(target_edge, start_node):
     # 특정 start node를 origin node로 했을 때 target_edge가 포함된 최단경로만 나오도록 함.
@@ -189,3 +224,13 @@ def objective_function(x):
 
 def constraint_function(x, constraint_value):
     return constraint_value - np.sum(x)
+
+def get_traffic_volume(route_number, objective_volume):
+    bounds = [(0, None) for _ in range(p_matrix.shape[1])]
+    constraints = [{'type' : 'ineq', 'fun' : lambda x: constraint_function(x, objective_volume)}]
+    obj_func = objective_function_wrapper(p_matrix)
+    
+    x0 = np.zeros(p_matrix.shape[1]) # 초기값
+    result = minimize(obj_func, x0, constraints=constraints, bounds=bounds)
+    
+    return list(np.array(result.x).astype(int))
