@@ -164,6 +164,9 @@ def get_edge_include_routes(target_edge):
     return results
 
 def get_p_matrix():
+    # 최적화에 쓰일 p matrix 만듬
+    # p matrix를 활용하여 66개의 최단경로에 할당되는 교통량을 활용하여
+    # main edge의 교통량을 계산.
     p_matrix = [[0] * 66 for _ in range(10)]
     for j in range(len(all_shortest_paths)):
         shortest_paths = all_shortest_paths[j]
@@ -174,3 +177,15 @@ def get_p_matrix():
     return np.array(p_matrix)
 
 p_matrix = get_p_matrix()
+
+def get_eT():
+    return np.random.randint(low=4000, high=5550, size=10) # 랜덤 변수 실행
+
+e_T = get_eT()
+
+def objective_function(x):
+    e = np.dot(p_matrix, x)
+    return np.sum(np.abs(e_T-e))
+
+def constraint_function(x, constraint_value):
+    return constraint_value - np.sum(x)
