@@ -155,8 +155,8 @@ def get_all_shortest_paths():
         for temp in temps:
             if temp not in all_shortest_paths:
                 all_shortest_paths.append(temp)
-    filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
-    return filtered_list
+    # filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
+    return all_shortest_paths
 
 
 all_shortest_paths = get_all_shortest_paths() # 모든 최단 경로 출력
@@ -171,10 +171,10 @@ def get_all_shortest_lengths():
     for start_node in origin_nodes:
         temps = return_all_lengths(start_node)
         for temp in temps:
-            if temp > 500:
-            # 500 보다 큰 경우에는 subnode에 의해 생성되는 거리 필터링 가능.
-            # 이거는 추후 논의 해볼 것.
-                all_shortest_lengths.append(temp)
+            # if temp > 500:
+            # # 500 보다 큰 경우에는 subnode에 의해 생성되는 거리 필터링 가능.
+            # # 이거는 추후 논의 해볼 것.
+            all_shortest_lengths.append(temp)
     return all_shortest_lengths
 
 all_shortest_lengths = get_all_shortest_lengths()
@@ -202,7 +202,7 @@ def get_p_matrix():
     # 최적화에 쓰일 p matrix 만듬
     # p matrix를 활용하여 66개의 최단경로에 할당되는 교통량을 활용하여
     # main edge의 교통량을 계산.
-    p_matrix = [[0] * 66 for _ in range(10)]
+    p_matrix = [[0] * len(all_shortest_paths) for _ in range(10)]
     for j in range(len(all_shortest_paths)):
         shortest_paths = all_shortest_paths[j]
         for i in range(len(main_edges)):
@@ -212,25 +212,3 @@ def get_p_matrix():
     return np.array(p_matrix)
 
 p_matrix = get_p_matrix()
-
-def get_eT():
-    return np.random.randint(low=4000, high=5550, size=10) # 랜덤 변수 실행
-
-e_T = get_eT()
-
-def objective_function(x):
-    e = np.dot(p_matrix, x)
-    return np.sum(np.abs(e_T-e))
-
-def constraint_function(x, constraint_value):
-    return constraint_value - np.sum(x)
-
-def get_traffic_volume(route_number, objective_volume):
-    bounds = [(0, None) for _ in range(p_matrix.shape[1])]
-    constraints = [{'type' : 'ineq', 'fun' : lambda x: constraint_function(x, objective_volume)}]
-    obj_func = objective_function_wrapper(p_matrix)
-    
-    x0 = np.zeros(p_matrix.shape[1]) # 초기값
-    result = minimize(obj_func, x0, constraints=constraints, bounds=bounds)
-    
-    return list(np.array(result.x).astype(int))
