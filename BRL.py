@@ -108,6 +108,26 @@ origin_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
 destination_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
 main_edges = ['r1_0_1', 'r1_1_0', 'r2_1_2', 'r2_2_1', 'r3_2_3', 'r3_3_2', 'r4_3_4', 'r4_4_3', 'r5_4_1', 'r5_1_4']
 
+keys = list(crossroad.keys())
+
+def get_crossroad_var(keys=keys):
+    crossroad_var = []
+    for i in keys:
+        if crossroad[i]:
+            for j in crossroad[i]:
+                crossroad_var.append([i ,j])
+        else:
+            pass
+    groups = {}  # 첫번째 원소를 기준으로 그룹을 만들기 위한 딕셔너리
+    for pair in crossroad_var:  # pairs는 주어진 이중 리스트
+        key = pair[0]  # 첫번째 원소를 기준으로 그룹을 만들어야 하므로, key 변수에 첫번째 원소를 저장
+        if key not in groups:  # key가 딕셔너리의 키에 없다면 새로운 리스트를 value로 추가
+            groups[key] = []
+        groups[key].append(pair) 
+    return groups
+
+crossroad_var = get_crossroad_var()
+
 def bfs_shortest_paths(start, end, graph=graph):
     """
     graph와 시작 노드, 끝 노드가 있을때 모든 최단경로를 출력하는 함수
