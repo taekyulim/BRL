@@ -1,0 +1,8 @@
+I want to express optimization problem using google ortools.
+Our problem's objective function is here.
+minimize sigma_i=1 to i = 10 that (abs(e_i^T - e_i)
+e_i^T is a known value we know, e_i is variable we make.
+We make e_i by numpy matrix manipulation.
+for np.array named e, e is made by e = Px
+P is 10x72 array we know, x is 72x1 array we can make.
+so we minimize objective function by searching appropriate x array.
