@@ -52,3 +52,14 @@ def get_O_matrix():
     return np.array(O_matrix)
 
 O_matrix = get_O_matrix()
+
+def is_sequenetial(smaller, larger):
+    smaller_len = len(smaller)
+    larger_len = len(larger)
+    
+    if smaller_len > larger_len:
+        return False
+    for i in range(larger_len - smaller_len + 1):
+        if larger[i:i+smaller_len] == smaller:
+            return True
+    return False

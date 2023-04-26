@@ -70,12 +70,39 @@ def extract_road_lengths(file_path):
     
     return lengths
 
+
+def get_adjacent_edges(file_path):
+    tree = parse(file_path)
+    root = tree.getroot()
+    edges = root.findall('edge')
+
+    adj_list = {}
+    edge_dict = {}
+
+    for edge in edges:
+        from_node = edge.get("from")
+        to_node = edge.get("to")
+
+        if from_node not in edge_dict:
+            edge_dict[from_node] = []
+        edge_dict[from_node].append(edge)
+
+    for edge in edges:
+        edge_id = edge.get("id")
+        to_node = edge.get("to")
+        if edge_id.startswith("r") is False:
+            if to_node in edge_dict:
+                adj_list[edge_id] = [adj_edge.get("id") for adj_edge in edge_dict[to_node] if adj_edge.get("from") != edge.get("to") or adj_edge.get("to") != edge.get("from")]
+
+    return adj_list
+
 # ----- 모델링에 사용할 전역 변수 입력 ----- #
 graph = extract_graph_from_xml_file(edge_file_path)
 position = extract_positions_from_xml_file(node_file_path)
 edges = extract_edge_from_xml_file(edge_file_path)
 reversed_edges = {tuple(value) : key for key, value in edges.items()}
 lengths = extract_road_lengths(edge_file_path)
+crossroad = get_adjacent_edges(edge_file_path)
 
 origin_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
 destination_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
@@ -152,9 +179,8 @@ def get_all_shortest_paths():
     all_shortest_paths = []
     for start_node in origin_nodes:
         temps = return_all_routes(start_node)
-        for temp in temps:
-            if temp not in all_shortest_paths:
-                all_shortest_paths.append(temp)
+        for temp_route in temps:
+            all_shortest_paths.append(temp_route)
     # filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
     return all_shortest_paths
 
@@ -170,11 +196,11 @@ def get_all_shortest_lengths():
     all_shortest_lengths = []
     for start_node in origin_nodes:
         temps = return_all_lengths(start_node)
-        for temp in temps:
+        for temp_length in temps:
             # if temp > 500:
             # # 500 보다 큰 경우에는 subnode에 의해 생성되는 거리 필터링 가능.
             # # 이거는 추후 논의 해볼 것.
-            all_shortest_lengths.append(temp)
+            all_shortest_lengths.append(temp_length)
     return all_shortest_lengths
 
 all_shortest_lengths = get_all_shortest_lengths()
