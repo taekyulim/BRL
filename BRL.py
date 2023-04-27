@@ -123,7 +123,8 @@ def get_crossroad_var(keys=keys):
         key = pair[0]  # 첫번째 원소를 기준으로 그룹을 만들어야 하므로, key 변수에 첫번째 원소를 저장
         if key not in groups:  # key가 딕셔너리의 키에 없다면 새로운 리스트를 value로 추가
             groups[key] = []
-        groups[key].append(pair) 
+        if key != pair:
+            groups[key].append(pair) 
     return groups
 
 crossroad_var = get_crossroad_var()
@@ -258,3 +259,30 @@ def get_p_matrix():
     return np.array(p_matrix)
 
 p_matrix = get_p_matrix()
+
+def angle_between_points(p1, p2, p3):
+    """
+    세 점이 있을때 각도를 구해주는 함수
+    """
+    x1, y1 = p1
+    x2, y2 = p2
+    x3, y3 = p3
+
+    angle1 = math.atan2(y2-y1, x2-x1)
+    angle2 = math.atan2(y3-y2, x3-x2)
+
+    angle = angle2 - angle1
+    angle = math.degrees(angle)
+
+    return angle%360
+
+def direction_from_angle(angle, straight_threshold=30, left_threshold=150):
+    """
+    angle_between_points로 부터 나온 각도값을 활용하여 직진, 우회전, 죄회전 하는 지 판단하는 함수
+    """
+    if straight_threshold <= angle <= 180 - straight_threshold:
+        return "좌회전"
+    elif 180 + straight_threshold <= angle <= 360 - straight_threshold:
+        return "우회전"
+    else:
+        return "직진"

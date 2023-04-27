@@ -1,5 +1,6 @@
 import numpy as np
 from BRL import *
+from ortools.linear_solver import pywraplp
 
 def get_eT():
     return np.random.randint(low=4000, high=5550, size=10) # 랜덤 변수 실행
@@ -63,3 +64,32 @@ def is_sequenetial(smaller, larger):
         if larger[i:i+smaller_len] == smaller:
             return True
     return False
+
+def get_intersection(element):
+    result = []
+    from_edge = element[0]
+    to_edge = element[1]
+    aa = get_edge_include_routes(from_edge)
+    bb = get_edge_include_routes(to_edge)
+    set_aa= set(tuple(x) for x in aa)
+    set_bb = set(tuple(x) for x in bb)
+    intersections = [list(x) for x in set_aa.intersection(set_bb)]
+    
+    for intersection in intersections:
+        result.append(all_shortest_paths.index(intersection))
+    return result
+
+
+def making_solution(e_T=e_T):
+    solver = pywraplp.Solver.CreateSolver('GLOP')
+    x = [solver.NumVar(0, solver.infinity(), f'x_{j}') for j in range(72)]
+
+    e = [solver.NumVar(0, solver.infinity(), f'e_{i}') for i in range(10)]
+
+    objective = solver.Objective()
+    for i in range(10):
+        e_i = sum(P[i, j]*x[j] for j in range(72))
+        
+        objective.SetCoefficient(e[i], 1)
+        solver.Add(e[i] == e_i - e_T[i])
+    objective.SetMinimization()
