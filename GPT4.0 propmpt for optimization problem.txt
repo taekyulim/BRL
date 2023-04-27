@@ -6,3 +6,8 @@ We make e_i by numpy matrix manipulation.
 for np.array named e, e is made by e = Px
 P is 10x72 array we know, x is 72x1 array we can make.
 so we minimize objective function by searching appropriate x array.
+
+For input array x, we have to give constraints about individual x element.
+It like (x_1 + x_2 + x_3) / (x_1 + x_2 + x_3 + x_4 +....) > 0.05.
+
+What library should I use and write python code.
