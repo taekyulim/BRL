@@ -79,13 +79,26 @@ def get_intersection(element):
         result.append(all_shortest_paths.index(intersection))
     return result
 
+def constraint_making(indices_list, is_end, x, solver):
+    total_x = sum(x[i] for group in indices_list for i in group)
+    for i in range(len(indices_list)):
+        if is_end[i]:# 끝나는 노드 경우
+            constraint = solver.Constraint(0.1, solver.infinity())
+            for j in indices_list[i]:
+                constraint.SetCoefficient(x[j], 1)
+            constraint.SetCoefficient(total_x, -1)
+        else: # 계속 진행되는 경우
+            constraint = solver.Constraint(-solver.infinity(), 0.6)
+            for k in indices_list[i]:
+                constraint.SetCoefficient(x[k], 1)
+            constraint.SetCoefficient(total_x, -1)
 
-def making_solution(e_T=e_T):
+
+def making_solution(e_T=e_T, P=p_matrix):
     solver = pywraplp.Solver.CreateSolver('GLOP')
     x = [solver.NumVar(0, solver.infinity(), f'x_{j}') for j in range(72)]
 
     e = [solver.NumVar(0, solver.infinity(), f'e_{i}') for i in range(10)]
-
     objective = solver.Objective()
     for i in range(10):
         e_i = sum(P[i, j]*x[j] for j in range(72))
@@ -93,3 +106,22 @@ def making_solution(e_T=e_T):
         objective.SetCoefficient(e[i], 1)
         solver.Add(e[i] == e_i - e_T[i])
     objective.SetMinimization()
+    
+    for key in keys:
+        aa = crossroad_var[key]
+        if len(aa) != 1:
+            indices_list = []
+            is_end = []
+            for a in aa:
+                indices_list.append(get_intersection(a))
+                if edges[a[1]][1] in destination_nodes:
+                    is_end.append(True)
+                else:
+                    is_end.append(False)
+            if indices_list:
+                constraint_making(indices_list = indices_list, is_end = is_end, x=x, solver=solver)
+    solver.Solve()
+    print(f"Objective value: {objective.Value()}")
+    print("Solution:")
+    for i in range(72):
+        print(f"x_{i} = {x[i].solution_value()}")
