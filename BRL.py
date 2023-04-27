@@ -107,10 +107,9 @@ crossroad = get_adjacent_edges(edge_file_path)
 origin_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
 destination_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
 main_edges = ['r1_0_1', 'r1_1_0', 'r2_1_2', 'r2_2_1', 'r3_2_3', 'r3_3_2', 'r4_3_4', 'r4_4_3', 'r5_4_1', 'r5_1_4']
+crossroad_keys = list(crossroad.keys())
 
-keys = list(crossroad.keys())
-
-def get_crossroad_var(keys=keys):
+def get_crossroad_var(keys=crossroad_keys):
     crossroad_var = []
     for i in keys:
         if crossroad[i]:
@@ -128,6 +127,7 @@ def get_crossroad_var(keys=keys):
     return groups
 
 crossroad_var = get_crossroad_var()
+crossroad_var_keys = list(crossroad_var.keys())
 
 def bfs_shortest_paths(start, end, graph=graph):
     """
