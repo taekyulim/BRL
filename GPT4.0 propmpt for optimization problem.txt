@@ -11,3 +11,70 @@ For input array x, we have to give constraints about individual x element.
 It like (x_1 + x_2 + x_3) / (x_1 + x_2 + x_3 + x_4 +....) > 0.05.
 
 What library should I use and write python code.
+
+----answer----
+You can use Google's OR-Tools library to solve this optimization problem. It provides a wide range of optimization algorithms, including linear programming (LP) and mixed-integer programming (MIP) solvers. In this case, you can use the LP solver to minimize the objective function subject to the constraint.
+
+First, you should install the OR-Tools library if you haven't already:
+
+bash
+Copy code
+pip install --upgrade ortools
+Next, you can use the following Python code as a starting point for your problem:
+
+python
+Copy code
+import numpy as np
+from ortools.linear_solver import pywraplp
+
+# Known values and data
+e_T = ...  # Replace with known e_i^T values
+P = ...  # Replace with known 10x72 matrix
+
+# Create the linear solver
+solver = pywraplp.Solver.CreateSolver('GLOP')
+
+# Define the x variables
+x = [solver.NumVar(0, solver.infinity(), f'x_{i}') for i in range(72)]
+
+# Define the e variables
+e = [solver.NumVar(0, solver.infinity(), f'e_{i}') for i in range(10)]
+
+# Define the objective function
+objective = solver.Objective()
+for i in range(10):
+    # Calculate e_i = P[i] * x
+    e_i = sum(P[i, j] * x[j] for j in range(72))
+    
+    # Add the absolute difference to the objective function
+    objective.SetCoefficient(e[i], 1)
+    solver.Add(e[i] == e_i - e_T[i])
+objective.SetMinimization()
+
+# Add the constraint
+constraint = solver.Constraint(0.05, solver.infinity())
+for i in range(3):
+    constraint.SetCoefficient(x[i], 1 / (sum(x) - x[i]))
+
+# Solve the problem
+solver.Solve()
+
+# Print the solution
+print(f"Objective value: {objective.Value()}")
+print("Solution:")
+for i in range(72):
+    print(f"x_{i} = {x[i].solution_value()}")
+Replace the placeholders for e_T and P with your known values. This code sets up the optimization problem, defines the variables, adds the objective function, and adds the constraint. Finally, it solves the problem and prints the solution.
+
+Remember that this is a starting point and you may need to adjust it to better fit your specific problem.
+
+--------------
+
+Your answer is good, but I want to give constraints about ratio.
+Some x variable's index is given in two dimension list.
+[[3, 4, 5, 14, 12, 13, 7, 16], [6, 17, 11, 2, 15, 8], [1, 10]]
+
+for example, first constraints is given like
+(x_3 + x_4 + x_5 + x_14 + x_12 + x_13 + x_7 + x_16)/(all sum of x in two dimension list) < 0.6
+(x_6 + x_17 + x_11 + x_2 + x_15 + x_8)/(all sum of x in two dimension list) < 0.6
+(x_1 + x_10)/(all sum of x in two dimension list) > 0.05
