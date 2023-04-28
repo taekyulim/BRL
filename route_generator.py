@@ -5,7 +5,6 @@ import math
 import copy
 from collections import deque
 from xml.etree.ElementTree import Element, parse, ElementTree
-from scipy.optimize import minimize
 
 # ========전처리 부분========
 
@@ -508,35 +507,6 @@ def make_route_xml(route_number, traffic_volume):
     tree = ElementTree(root)
     file_name = "pangyo.rou.xml"
     tree.write(file_name, encoding="utf-8", xml_declaration=True)
-
-# def make_route_xml(route_number, traffic_volumes):
-#     """
-#     input_node, output_node, 시작시간대 입력시 input_node에서 통계분포를 활용하여 교통량 생성후 그에 맞는 rou.xml 생성
-#     """
-#     input_volume = get_traffic_volume(transfer[input_node], begin_time)
-#     paths = bfs_shortest_paths(input_node, output_node)
-#     directions = get_directions(input_node, output_node)
-#     ratios = get_traffic_ratio(paths, directions)[0]
-#     traffic_volume = [int(input_volume*ratio) for ratio in ratios]
-#     generate_route_xml(traffic_volume, paths)
-    
-### 교통량 생성
-# transfer = {
-#     "a" : 0,
-#     "b" : 1,
-#     "c" : 2,
-#     "d" : 3,
-#     "e" : 4,
-# }
-
-# def get_traffic_volume(vertex, time):
-#     """
-#     vertex : 간선 번호(1~6)
-#     time : 시작 시간대(1~23)
-#     """
-#     lamd = lambds[vertex-1][time-1]
-#     result = np.random.poisson(lamd, 1)
-#     return result
 
 def indent(elem, level=0):
     i = "\n" + level*"  "
