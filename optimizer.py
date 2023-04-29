@@ -1,4 +1,3 @@
-import numpy as np
 from BRL import *
 from ortools.linear_solver import pywraplp
 
@@ -7,24 +6,6 @@ def get_eT():
 
 # e_T = get_eT()
 e_T = np.array([4494, 4069, 4227, 4752, 4338, 4844, 4939, 4017, 5137, 4836])
-
-# def objective_function(x):
-#     e = np.dot(p_matrix, x)
-#     return np.sum(np.abs(e_T-e))
-
-# def constraint_function(x, constraint_value):
-#     return constraint_value - np.sum(x)
-
-# def get_traffic_volume(route_number, objective_volume):
-#     bounds = [(0, None) for _ in range(p_matrix.shape[1])]
-#     constraints = [{'type' : 'ineq', 'fun' : lambda x: constraint_function(x, objective_volume)}]
-#     obj_func = objective_function_wrapper(p_matrix)
-    
-#     x0 = np.zeros(p_matrix.shape[1]) # 초기값
-#     result = minimize(obj_func, x0, constraints=constraints, bounds=bounds)
-    
-#     return list(np.array(result.x).astype(int))
-
 
 node_index = {
     '0_0' : 0,
@@ -93,93 +74,6 @@ def constraint_making(indices_list, is_end, x, solver):
             # solver.Add(sum(x[j]/all_shortest_lengths[j] for j in indices_list[i]) - 0.6* total_x <= 0)
     return solver
 
-
-# def making_solution(e_T=e_T, P=p_matrix):
-#     solver = pywraplp.Solver.CreateSolver('GLOP')
-#     x = [solver.NumVar(0, solver.infinity(), f'x_{j}') for j in range(72)]
-
-#     e = [solver.NumVar(0, solver.infinity(), f'e_{i}') for i in range(10)]
-#     objective = solver.Objective()
-#     for i in range(10):
-#         e_i = sum(P[i, j]*x[j] for j in range(72))
-        
-#         objective.SetCoefficient(e[i], 1)
-#         solver.Add(e[i] == e_i - e_T[i])
-#     objective.SetMinimization()
-    
-#     for key in keys:
-#         aa = crossroad_var[key]
-#         if len(aa) != 1:
-#             indices_list = []
-#             is_end = []
-#             for a in aa:
-#                 indices_list.append(get_intersection(a))
-#                 if edges[a[1]][1] in destination_nodes:
-#                     is_end.append(True)
-#                 else:
-#                     is_end.append(False)
-#             if indices_list:
-#                 constraint_making(indices_list = indices_list, is_end = is_end, x=x, solver=solver)
-#     solver.Solve()
-#     print(f"Objective value: {objective.Value()}")
-#     print("Solution:")
-#     for i in range(72):
-#         print(f"x_{i} = {x[i].solution_value()}")
-        
-# crossroad_var_keys = list(crossroad_var.keys())
-
-# class OptimizationProblem:
-#     def __init__(self, e_T = e_T, P=p_matrix):
-#         self.e_T = e_T
-#         self.P = P
-#         self.solver = pywraplp.Solver.CreateSolver('GLOP')
-#         self.x = [self.solver.NumVar(0, self.solver.infinity(), f'x_{j}') for j in range(72)]
-#         self.e = [self.solver.NumVar(0, self.solver.infinity(), f'e_{i}') for i in range(10)]
-#         self.objective = self.solver.Objective()
-        
-#     def build_objective(self):
-#         for i in range(10):
-#             e_i = sum(self.P[i, j] * self.x[j] for j in range(72))
-#             self.objective.SetCoefficient(self.e[i], 1)
-#             self.solver.Add(self.e[i] == e_i - self.e_T[i])
-#         self.objective.SetMinimization()
-        
-#     def constraint_making(self, indices_list, is_end):
-#         for i in range(len(indices_list)):
-#             if is_end[i]:  # Ending node case
-#                 constraint = self.solver.Constraint(0.1, self.solver.infinity())
-#                 for j in indices_list[i]:
-#                     constraint.SetCoefficient(self.x[j], 1)
-#             else:  # Continuing node case
-#                 constraint = self.solver.Constraint(-self.solver.infinity(), 0.6)
-#                 for k in indices_list[i]:
-#                     constraint.SetCoefficient(self.x[k], 1)
-    
-#     def build_constraints(self,crossroad_var = crossroad_var, get_intersection = get_intersection, edges = edges, destination_nodes = destination_nodes, keys=crossroad_var_keys):
-#         for key in keys:
-#             aa = crossroad_var[key]
-#             if len(aa) != 1:
-#                 indices_list = []
-#                 is_end = []
-#                 for a in aa:
-#                     indices_list.append(get_intersection(a))
-#                     if edges[a[1]][1] in destination_nodes:
-#                         is_end.append(True)
-#                     else:
-#                         is_end.append(False)
-#                 if indices_list:
-#                     self.constraint_making(indices_list=indices_list, is_end=is_end)
-
-#     def solve(self):
-#         self.solver.Solve()
-        
-#     def print_solution(self):
-#         print(f"Objective value: {self.objective.Value()}")
-#         print("Solution:")
-#         for i in range(72):
-#             print(f"x_{i} = {self.x[i].solution_value()}")
-
-
 def solve(P=p_matrix, keys=crossroad_var_keys):
     solver = pywraplp.Solver.CreateSolver('GLOP')
     num_x = P.shape[1]
@@ -228,8 +122,3 @@ def solve(P=p_matrix, keys=crossroad_var_keys):
         if x[i].solution_value() != 0:
             result[i] = int(x[i].solution_value())
     return result
-    # print(f"Objective value: {objective.Value()}")
-    # print("Solution:")
-    # for i in range(num_x):
-    #     print(f"x_{i} = {x[i].solution_value()}")
-        
