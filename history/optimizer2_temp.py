@@ -1,5 +1,5 @@
 from BRL import *
-from ortools.sat.python import cp_model
+import cvxpy as cp
 import numpy as np
 
 def get_eT():
@@ -63,8 +63,8 @@ def get_intersection(element):
             result.append(all_shortest_paths.index(intersection))
     return result
 
-def constraint_making(indices_list, directions, x, model, w1=100, w2=70, w3=5, w4=100, w5=70, w6=5, w7=100, w8=70, w9=5):
-
+def constraint_making(indices_list, directions, x):
+    constraints = []
     total_x = sum(x[i] for group in indices_list for i in group)
     straight_sum = sum(x[j] for i, group in enumerate(indices_list) for j in group if directions[i] == "직진")
     left_sum = sum(x[j] for i, group in enumerate(indices_list) for j in group if directions[i] == "좌회전")
@@ -72,49 +72,38 @@ def constraint_making(indices_list, directions, x, model, w1=100, w2=70, w3=5, w
 
     if len(directions) == 3:
         pass
-        # model.Add(10*straight_sum - 5*total_x >= 0)
-        # model.Add(10*straight_sum - 7*total_x <= 0)
-        # model.Add(10*left_sum + 10*right_sum - 5*total_x <= 0)
-        # model.Add(100*left_sum - 5*total_x >= 0)
-        # model.Add(100*right_sum - 5*total_x >= 0)
-        # model.Add(left_sum - right_sum >= 0)
+        # constraints.append(10 * straight_sum - 5 * total_x >= 0)
+        # constraints.append(10 * straight_sum - 7 * total_x <= 0)
+        # constraints.append(10 * left_sum + 10 * right_sum - 5 * total_x <= 0)
+        # constraints.append(100 * left_sum - 5 * total_x >= 0)
+        # constraints.append(100 * right_sum - 5 * total_x >= 0)
+        # constraints.append(left_sum - right_sum >= 0)
     elif '직진' in directions:
         if '우회전' in directions:
-            model.Add(w1*straight_sum - w2*total_x <= 0)
-            model.Add(w1*right_sum - w3*total_x >= 0)
-        else: # 좌회전 케이스
-            model.Add(w4*straight_sum - w5*total_x <= 0)
-            model.Add(w4*left_sum - w6*total_x >= 0)
-    else: # 죄회전, 우회전으로 길 갈림
-        model.Add(w7*left_sum - w8*total_x <= 0)
-        model.Add(w7*right_sum - w9*total_x >= 0)
+            constraints.append(100 * straight_sum - 70 * total_x <= 0)
+            constraints.append(100 * right_sum - 5 * total_x >= 0)
+        else:  # 좌회전 케이스
+            constraints.append(100 * straight_sum - 70 * total_x <= 0)
+            constraints.append(100 * left_sum - 5 * total_x >= 0)
+    else:  # 좌회전, 우회전으로 길 갈림
+        constraints.append(100 * left_sum - 70 * total_x <= 0)
+        constraints.append(100 * right_sum - 5 * total_x >= 0)
 
-    return model
+    return constraints
 
 
-def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4=1000, w5=70, w6=5, w7=1000, w8=70, w9=5):
-    model = cp_model.CpModel()
-    solver = cp_model.CpSolver()
+def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T):
     num_x = P.shape[1]
     num_e = P.shape[0]
-    etrue = [e_T[i] for i in range(num_e)] # numpy 자료형 에서 파이썬 형태로 바꿈.
 
-    x = [model.NewIntVar(0, 10000, f'x_{i}') for i in range(num_x)] # 최단경로 활당용 변수
-    error = [model.NewIntVar(-100000, 100000, f"error_{i}") for i in range(num_e)]
-    squared_error = [model.NewIntVar(0, 10000000, f"squared_error_{i}") for i in range(num_e)]
-
-    for i in range(num_e):
-        model.Add(error[i] == sum([P[i, j]*x[j] for j in range(num_x)]) - etrue[i])
-        model.AddMultiplicationEquality(squared_error[i], [error[i], error[i]])
-
-    sum_squared_error = model.NewIntVar(0, 1000000000, 'sum_squared_error')
-    model.Add(sum_squared_error == sum(squared_error[i] for i in range(num_e)))
-    model.Minimize(sum_squared_error)
-
+    x = cp.Variable(num_x, nonneg=True)
+    e = cp.Variable(num_e)
+    squared_diff = cp.sum_squares(e_T - e)
+    constraints = [e == P @ x]
 
     for key in keys:
         aa = crossroad_var[key]
-        if len(aa) != 1: # 하나일땐 전부 다 들어가므로 패스
+        if len(aa) != 1:
             indices_list = []
             directions = []
             for a in aa:
@@ -126,15 +115,15 @@ def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4
                 direction = direction_from_angle(angle)
                 directions.append(direction)
             if indices_list:
-                # directions : ['직진', '우회전', '좌회전'] 형태
-                model = constraint_making(indices_list = indices_list, directions= directions, x=x, model=model, w1=int(w1), w2=int(w2), \
-                    w3=int(w3), w4=int(w4), w5=int(w5), w6=int(w6), w7=int(w7), w8=int(w8), w9=int(w9))
+                constraints += constraint_making(indices_list=indices_list, directions=directions, x=x)
 
-    status = solver.Solve(model)
-    
+    objective = cp.Minimize(squared_diff)
+    problem = cp.Problem(objective, constraints)
+    problem.solve(solver=cp.ECOS_BB)
+
     result = {}
     for i in range(num_x):
-        if solver.Value(x[i]) != 0:
-            result[i] = solver.Value(x[i])
+        if x.value[i] != 0:
+            result[i] = int(x.value[i])
 
-    return result
+    return result, problem.status

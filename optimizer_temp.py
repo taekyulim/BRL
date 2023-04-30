@@ -1,5 +1,6 @@
 from BRL import *
 from ortools.linear_solver import pywraplp
+# import cvxpy as cp
 
 def get_eT():
     return np.random.randint(low=4000, high=5550, size=10) # 랜덤 변수 실행
@@ -122,3 +123,7 @@ def solve(P=p_matrix, keys=crossroad_var_keys):
         if x[i].solution_value() != 0:
             result[i] = int(x[i].solution_value())
     return result
+    # print(f"Objective value: {objective.Value()}")
+    # print("Solution:")
+    # for i in range(num_x):
+    #     print(f"x_{i} = {x[i].solution_value()}")
