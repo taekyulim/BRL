@@ -1,7 +1,7 @@
 <configuration>
    <input>
       <net-file value="test2.net.xml"/>
-      <route-files value="test2.rou.xml"/>
+      <route-files value="optimal.rou.xml"/>
       <additional-files value="test2.add.xml"/>
    </input>
    <time>

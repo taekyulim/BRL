@@ -108,6 +108,17 @@ destination_nodes = ["0_0", "0_2", "1_3", "2_2", "4_0", "4_1", "3_1", "3_2"]
 main_edges = ['r1_0_1', 'r1_1_0', 'r2_1_2', 'r2_2_1', 'r3_2_3', 'r3_3_2', 'r4_3_4', 'r4_4_3', 'r5_4_1', 'r5_1_4']
 crossroad_keys = list(crossroad.keys())
 
+node_index = {
+    '0_0' : 0,
+    '0_2' : 1,
+    '1_3' : 2,
+    '2_2' : 3,
+    '3_2' : 4,
+    '3_1' : 5,
+    '4_1' : 6,
+    '4_0' : 7
+}
+
 def get_crossroad_var(keys=crossroad_keys):
     crossroad_var = []
     for i in keys:
@@ -224,6 +235,25 @@ def get_all_shortest_lengths():
     return all_shortest_lengths
 
 all_shortest_lengths = get_all_shortest_lengths()
+
+
+def get_I_matrix():
+    I_matrix = [[0] * len(all_shortest_paths) for _ in range(8)]
+    for j in range(len(all_shortest_paths)):
+        first_node = edges[all_shortest_paths[j][0]][0]
+        I_matrix[node_index[first_node]][j] = 1
+    return np.array(I_matrix)
+
+I_matrix = get_I_matrix()
+
+def get_O_matrix():
+    O_matrix = [[0] * len(all_shortest_paths) for _ in range(8)]
+    for j in range(len(all_shortest_paths)):
+        last_node = edges[all_shortest_paths[j][-1]][1]
+        O_matrix[node_index[last_node]][j] = 1
+    return np.array(O_matrix)
+
+O_matrix = get_O_matrix()
 
 def filter_routes(target_edge, start_node):
     # 특정 start node를 origin node로 했을 때 target_edge가 포함된 최단경로만 나오도록 함.

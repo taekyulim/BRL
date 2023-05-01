@@ -1,6 +1,7 @@
 from BRL import *
 from ortools.sat.python import cp_model
 import numpy as np
+from input_output_gen import data_gen
 
 def get_eT():
     return np.random.randint(low=4000, high=5550, size=10) # 랜덤 변수 실행
@@ -63,7 +64,19 @@ def constraint_making(indices_list, directions, x, model, w1=100, w2=70, w3=5, w
     return model
 
 
-def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4=1000, w5=70, w6=5, w7=1000, w8=70, w9=5):
+def solve(P=p_matrix, I=I_matrix,O=O_matrix,keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=626, w3=11, w4=1000, w5=1, w6=12, w7=1000, w8=288, w9=78):
+    
+    traffic_volume = {}
+    for i in range(len(main_edges)):
+        traffic_volume[main_edges[i]] = e_T[i]
+    traffic_count = data_gen(traffic_volume)
+    input_answer = []
+    output_answer = []
+    for edge in traffic_count:
+        input_answer.append(traffic_count[edge]['enter'])
+        output_answer.append(traffic_count[edge]['exit'])
+    origin_len = len(input_answer)
+    
     model = cp_model.CpModel()
     solver = cp_model.CpSolver()
     num_x = P.shape[1]
@@ -77,6 +90,11 @@ def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4
     for i in range(num_e):
         model.Add(error[i] == sum([P[i, j]*x[j] for j in range(num_x)]) - etrue[i])
         model.AddMultiplicationEquality(squared_error[i], [error[i], error[i]])
+    
+    for i in range(origin_len):
+        model.Add(input_answer[i] == sum([I[i, j]*x[j] for j in range(num_x)]))
+        model.Add(output_answer[i] == sum([O[i, j]*x[j] for j in range(num_x)]))
+    
 
     sum_squared_error = model.NewIntVar(0, 1000000000, 'sum_squared_error')
     model.Add(sum_squared_error == sum(squared_error[i] for i in range(num_e)))
@@ -102,10 +120,11 @@ def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4
                     w3=int(w3), w4=int(w4), w5=int(w5), w6=int(w6), w7=int(w7), w8=int(w8), w9=int(w9))
 
     status = solver.Solve(model)
-    
-    result = {}
-    for i in range(num_x):
-        if solver.Value(x[i]) != 0:
-            result[i] = solver.Value(x[i])
-
-    return result
+    if status == 4:
+        result = {}
+        for i in range(num_x):
+            if solver.Value(x[i]) != 0:
+                result[i] = solver.Value(x[i])
+        return result
+    else:
+        return None
