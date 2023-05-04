@@ -34,7 +34,7 @@ def get_intersection(element):
             result.append(all_shortest_paths.index(intersection))
     return result
 
-def constraint_making(indices_list, directions, x, model, w1=1000, w2=607, w3=51, w4=1000, w5=456, w6=8, w7=1000, w8=960, w9=66):
+def constraint_making(indices_list, directions, x, model, w1=1000, w2=600, w3=30, w4=1000, w5=550, w6=450):
 
     total_x = sum(x[i] for group in indices_list for i in group)
     straight_sum = sum(x[j] for i, group in enumerate(indices_list) for j in group if directions[i] == "직진")
@@ -51,57 +51,64 @@ def constraint_making(indices_list, directions, x, model, w1=1000, w2=607, w3=51
         # model.Add(left_sum - right_sum >= 0)
     elif '직진' in directions:
         if '우회전' in directions:
-            model.Add(w1*straight_sum - w2*total_x <= 0)
-            model.Add(w1*right_sum - w3*total_x >= 0)
+            pass
+            # model.Add(w1*straight_sum - w2*total_x <= 0)
+            # model.Add(w1*right_sum - w3*total_x >= 0)
         else: # 좌회전 케이스
-            model.Add(w4*straight_sum - w5*total_x <= 0)
-            model.Add(w4*left_sum - w6*total_x >= 0)
+            model.Add(w1*straight_sum - w2*total_x <= 0)
+            model.Add(w1*left_sum - w3*total_x >= 0)
     else: # 죄회전, 우회전으로 길 갈림
-        model.Add(w7*left_sum - w8*total_x <= 0)
-        model.Add(w7*right_sum - w9*total_x >= 0)
+        model.Add(w4*left_sum - w5*total_x <= 0)
+        model.Add(w4*right_sum - w6*total_x >= 0)
 
     return model
 
-input_volume = [1549, 2560, 1157, 2065, 1801, 1514, 1842, 1211]
-output_volume = [1597, 998, 1157, 2078, 1427, 2210, 1730, 1671]
 
-def solve(P=p_matrix, I=I_matrix, O=O_matrix,keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4=1000, w5=70, w6=5, w7=1000, w8=70, w9=5, input_volume=input_volume, output_volume=output_volume,lambda1 = 10, lambda2 = 10, max_time=10):
+def solve(P=p_matrix, I=I_matrix ,keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=596, w3=400, w4=1000, w5=694, w6=320, max_time = 10):
     model = cp_model.CpModel()
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = max_time
-
     num_x = P.shape[1]
     num_e = P.shape[0]
     etrue = [e_T[i] for i in range(num_e)] # numpy 자료형 에서 파이썬 형태로 바꿈.
+    
+    solver.parameters.max_time_in_seconds = max_time
 
-    x = [model.NewIntVar(0, 10000, f'x_{i}') for i in range(num_x)] # 최단경로 활당용 변수
+    x = [model.NewIntVar(0, 10000, f'x_{i}') for i in range(num_x)] # 최단경로 활당용 변6543wsf수
     error = [model.NewIntVar(-100000, 100000, f"error_{i}") for i in range(num_e)]
     squared_error = [model.NewIntVar(0, 10000000, f"squared_error_{i}") for i in range(num_e)]
+    num_iv = I_matrix.shape[0]
+    
+    input_volume = [model.NewIntVar(0, 1000000, f"input_volume_{i}") for i in range(num_iv)]
+    
+    for i in range(num_iv):
+        model.Add(input_volume[i] == sum([I[i, j]*x[j] for j in range(num_x)]))
+        model.Add(input_volume[i] > 0)
+        
 
     for i in range(num_e):
         model.Add(error[i] == sum([P[i, j]*x[j] for j in range(num_x)]) - etrue[i])
         model.AddMultiplicationEquality(squared_error[i], [error[i], error[i]])
+        
+
+
+    sum_squared_error = model.NewIntVar(0, 1000000000, 'sum_squared_error')
+    model.Add(sum_squared_error == sum(squared_error[i] for i in range(num_e)))
     
-    num_iv = len(input_volume)
-    input_volume_error = [model.NewIntVar(-100000, 100000, f"input_volume_error_{i}") for i in range(num_iv)]
-    squared_input_volume_error = [model.NewIntVar(0, 10000000, f"squared_input_volume_error_{i}") for i in range(num_iv)]
+    regularization_lambda = 1
+        
+       # Calculate the L2 regularization term
+    squared_x = [model.NewIntVar(0, 100000000, f"squared_x_{i}") for i in range(num_x)]
+    for i in range(num_x):
+        model.AddMultiplicationEquality(squared_x[i], [x[i], x[i]])
+
+    sum_squared_x = model.NewIntVar(0, 1000000000, 'sum_squared_x')
+    model.Add(sum_squared_x == sum(squared_x[i] for i in range(num_x)))
+
+    # Modify objective function to include L2 regularization term
+    objective = model.NewIntVar(0, 100000000000000, 'objective')
+    model.Add(objective == 10*sum_squared_error + regularization_lambda * sum_squared_x)
+    model.Minimize(objective)
     
-    output_volume_error = [model.NewIntVar(-100000, 100000, f"output_volume_error_{i}") for i in range(num_iv)]
-    squared_output_volume_error = [model.NewIntVar(0, 10000000, f"squared_output_volume_error_{i}") for i in range(num_iv)]
-
-    for i in range(num_iv):
-        calculated_input_volume = sum([I[i, j] * x[j] for j in range(num_x)])
-        calculated_output_volume = sum([O[i, j]*x[j] for j in range(num_x)])
-        model.Add(input_volume_error[i] == input_volume[i] - calculated_input_volume)
-        model.Add(output_volume_error[i] == output_volume[i] - calculated_output_volume)
-        model.AddMultiplicationEquality(squared_input_volume_error[i], [input_volume_error[i], input_volume_error[i]])
-        model.AddMultiplicationEquality(squared_output_volume_error[i], [output_volume_error[i], output_volume_error[i]])
-  
-    sum_squared_error = model.NewIntVar(0, 10000000000, 'sum_squared_error')
-    model.Add(sum_squared_error == lambda1*sum(squared_error[i] for i in range(num_e)) + lambda2*sum(squared_input_volume_error[i] for i in range(num_iv)) + lambda2*sum(squared_output_volume_error[i] for i in range(num_iv)))
-    model.Minimize(sum_squared_error)
-
-
     for key in keys:
         aa = crossroad_var[key]
         if len(aa) != 1: # 하나일땐 전부 다 들어가므로 패스
@@ -118,9 +125,12 @@ def solve(P=p_matrix, I=I_matrix, O=O_matrix,keys=crossroad_var_keys, e_T=e_T, w
             if indices_list:
                 # directions : ['직진', '우회전', '좌회전'] 형태
                 model = constraint_making(indices_list = indices_list, directions= directions, x=x, model=model, w1=int(w1), w2=int(w2), \
-                    w3=int(w3), w4=int(w4), w5=int(w5), w6=int(w6), w7=int(w7), w8=int(w8), w9=int(w9))
+                    w3=int(w3), w4=int(w4))
 
     status = solver.Solve(model)
+    
+    # return status
+
     
     result = {}
     for i in range(num_x):

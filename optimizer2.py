@@ -34,7 +34,7 @@ def get_intersection(element):
             result.append(all_shortest_paths.index(intersection))
     return result
 
-def constraint_making(indices_list, directions, x, model, w1=100, w2=70, w3=5, w4=100, w5=70, w6=5, w7=100, w8=70, w9=5):
+def constraint_making(indices_list, directions, x, model, w1=1000, w2=607, w3=51, w4=1000, w5=456, w6=8, w7=1000, w8=960, w9=66):
 
     total_x = sum(x[i] for group in indices_list for i in group)
     straight_sum = sum(x[j] for i, group in enumerate(indices_list) for j in group if directions[i] == "직진")
