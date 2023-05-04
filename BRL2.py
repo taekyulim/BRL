@@ -212,8 +212,8 @@ def get_all_shortest_paths():
         temps = return_all_routes(start_node)
         for temp_route in temps:
             all_shortest_paths.append(temp_route)
-    filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
-    return filtered_list
+    # filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
+    return all_shortest_paths
 
 
 all_shortest_paths = get_all_shortest_paths() # 모든 최단 경로 출력
@@ -228,10 +228,10 @@ def get_all_shortest_lengths():
     for start_node in origin_nodes:
         temps = return_all_lengths(start_node)
         for temp_length in temps:
-            if temp_length > 500:
+            # if temp_length > 500:
             # # 500 보다 큰 경우에는 subnode에 의해 생성되는 거리 필터링 가능.
             # # 이거는 추후 논의 해볼 것.
-                all_shortest_lengths.append(temp_length)
+            all_shortest_lengths.append(temp_length)
     return all_shortest_lengths
 
 all_shortest_lengths = get_all_shortest_lengths()

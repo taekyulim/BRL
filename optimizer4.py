@@ -1,40 +1,12 @@
 from BRL import *
 from ortools.sat.python import cp_model
+import numpy as np
 
 def get_eT():
     return np.random.randint(low=4000, high=5550, size=10) # 랜덤 변수 실행
 
 # e_T = get_eT()
-e_T = np.array([4494, 4069, 4227, 4752, 4338, 4844, 4939, 4017, 5137, 4836])
-
-node_index = {
-    '0_0' : 0,
-    '0_2' : 1,
-    '1_3' : 2,
-    '2_2' : 3,
-    '3_2' : 4,
-    '3_1' : 5,
-    '4_1' : 6,
-    '4_0' : 7
-}
-
-def get_I_matrix():
-    I_matrix = [[0] * len(all_shortest_paths) for _ in range(8)]
-    for j in range(len(all_shortest_paths)):
-        first_node = edges[all_shortest_paths[j][0]][0]
-        I_matrix[node_index[first_node]][j] = 1
-    return np.array(I_matrix)
-
-I_matix = get_I_matrix()
-
-def get_O_matrix():
-    O_matrix = [[0] * len(all_shortest_paths) for _ in range(8)]
-    for j in range(len(all_shortest_paths)):
-        last_node = edges[all_shortest_paths[j][-1]][1]
-        O_matrix[node_index[last_node]][j] = 1
-    return np.array(O_matrix)
-
-O_matrix = get_O_matrix()
+e_T = np.random.randint(low=100, high=450, size=10)
 
 def is_sequenetial(smaller, larger):
     smaller_len = len(smaller)
@@ -62,7 +34,7 @@ def get_intersection(element):
             result.append(all_shortest_paths.index(intersection))
     return result
 
-def constraint_making(indices_list, directions, x, model):
+def constraint_making(indices_list, directions, x, model, w1=1000, w2=607, w3=51, w4=1000, w5=456, w6=8, w7=1000, w8=960, w9=66):
 
     total_x = sum(x[i] for group in indices_list for i in group)
     straight_sum = sum(x[j] for i, group in enumerate(indices_list) for j in group if directions[i] == "직진")
@@ -79,57 +51,69 @@ def constraint_making(indices_list, directions, x, model):
         # model.Add(left_sum - right_sum >= 0)
     elif '직진' in directions:
         if '우회전' in directions:
-            model.Add(10*straight_sum - 7*total_x <= 0)
-            model.Add(100*right_sum - 5*total_x >= 0)
-        else: # 좌회전 케이스
-            model.Add(10*straight_sum - 7*total_x <= 0)
-            model.Add(100*left_sum - 5*total_x >= 0)
-    else: # 죄회전, 우회전으로 길 갈림
-        model.Add(10*left_sum - 7*total_x <= 0)
-        model.Add(100*right_sum - 5*total_x >= 0)
-
-    return model
-
-def constraint_making_exit(indices_list, is_end, x, model):
-    total_x = sum(x[i] for group in indices_list for i in group)
-    # total_x = sum(x[i]/all_shortest_lengths[i] for group in indices_list for i in group)
-    for i in range(len(indices_list)):
-        if is_end[i]:# 끝나는 노드 경우
             pass
-            # model.Add(10*sum(x[j] for j in indices_list[i]) - total_x >= 0)
-            # solver.Add(sum(x[j]/all_shortest_lengths[j] for j in indices_list[i]) - 0.1* total_x >= 0)
-        else: # 계속 진행되는 경우
-            model.Add(10*sum(x[j] for j in indices_list[i]) - 6* total_x <= 0)
-            # solver.Add(sum(x[j]/all_shortest_lengths[j] for j in indices_list[i]) - 0.6* total_x <= 0)
+            # model.Add(w1*straight_sum - w2*total_x <= 0)
+            # model.Add(w1*right_sum - w3*total_x >= 0)
+        else: # 좌회전 케이스
+            model.Add(w4*straight_sum - w5*total_x <= 0)
+            model.Add(w4*left_sum - w6*total_x >= 0)
+    else: # 죄회전, 우회전으로 길 갈림
+        model.Add(w7*left_sum - w8*total_x <= 0)
+        model.Add(w7*right_sum - w9*total_x >= 0)
+
     return model
 
 
-def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T):
+def solve(P=p_matrix, I=I_matrix ,keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=596, w3=92, w4=1000, w5=694, w6=913, w7=1000, w8=238, w9=379, max_time = 10):
     model = cp_model.CpModel()
     solver = cp_model.CpSolver()
     num_x = P.shape[1]
     num_e = P.shape[0]
     etrue = [e_T[i] for i in range(num_e)] # numpy 자료형 에서 파이썬 형태로 바꿈.
+    
+    solver.parameters.max_time_in_seconds = max_time
 
-    x = [model.NewIntVar(0, 10000, f'x_{i}') for i in range(num_x)] # 최단경로 활당용 변수
+    x = [model.NewIntVar(0, 10000, f'x_{i}') for i in range(num_x)] # 최단경로 활당용 변6543wsf수
     error = [model.NewIntVar(-100000, 100000, f"error_{i}") for i in range(num_e)]
     squared_error = [model.NewIntVar(0, 10000000, f"squared_error_{i}") for i in range(num_e)]
+    num_iv = I_matrix.shape[0]
+    
+    input_volume = [model.NewIntVar(0, 1000000, f"input_volume_{i}") for i in range(num_iv)]
+    
+    for i in range(num_iv):
+        model.Add(input_volume[i] == sum([I[i, j]*x[j] for j in range(num_x)]))
+        model.Add(input_volume[i] > 0)
+        
 
     for i in range(num_e):
         model.Add(error[i] == sum([P[i, j]*x[j] for j in range(num_x)]) - etrue[i])
         model.AddMultiplicationEquality(squared_error[i], [error[i], error[i]])
+        
+
 
     sum_squared_error = model.NewIntVar(0, 1000000000, 'sum_squared_error')
     model.Add(sum_squared_error == sum(squared_error[i] for i in range(num_e)))
-    model.Minimize(sum_squared_error)
+    
+    regularization_lambda = 1
+        
+       # Calculate the L2 regularization term
+    squared_x = [model.NewIntVar(0, 100000000, f"squared_x_{i}") for i in range(num_x)]
+    for i in range(num_x):
+        model.AddMultiplicationEquality(squared_x[i], [x[i], x[i]])
 
+    sum_squared_x = model.NewIntVar(0, 1000000000, 'sum_squared_x')
+    model.Add(sum_squared_x == sum(squared_x[i] for i in range(num_x)))
 
+    # Modify objective function to include L2 regularization term
+    objective = model.NewIntVar(0, 100000000000000, 'objective')
+    model.Add(objective == 10*sum_squared_error + regularization_lambda * sum_squared_x)
+    model.Minimize(objective)
+    
     for key in keys:
         aa = crossroad_var[key]
         if len(aa) != 1: # 하나일땐 전부 다 들어가므로 패스
             indices_list = []
             directions = []
-            is_end = []
             for a in aa:
                 indices_list.append(get_intersection(a))
                 first = position[edges[a[0]][0]]
@@ -138,22 +122,19 @@ def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T):
                 angle = angle_between_points(first, second, third)
                 direction = direction_from_angle(angle)
                 directions.append(direction)
-                if edges[a[1]][1] in destination_nodes:
-                    is_end.append(True)
-                else:
-                    is_end.append(False)
             if indices_list:
                 # directions : ['직진', '우회전', '좌회전'] 형태
-                model = constraint_making(indices_list = indices_list, directions= directions, x=x, model=model)
-                model = constraint_making_exit(indices_list=indices_list, is_end=is_end, x=x, model=model)
+                model = constraint_making(indices_list = indices_list, directions= directions, x=x, model=model, w1=int(w1), w2=int(w2), \
+                    w3=int(w3), w4=int(w4), w5=int(w5), w6=int(w6), w7=int(w7), w8=int(w8), w9=int(w9))
 
     status = solver.Solve(model)
+    
+    # return status
 
-    # result = {}
-    # for i in range(num_x):
-    #     if solver.Value(x[i]) != 0:
-    #         result[i] = solver.Value(x[i])
+    
+    result = {}
+    for i in range(num_x):
+        if solver.Value(x[i]) != 0:
+            result[i] = solver.Value(x[i])
 
-
-
-    return status
+    return result

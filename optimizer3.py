@@ -62,10 +62,14 @@ def constraint_making(indices_list, directions, x, model, w1=1000, w2=607, w3=51
 
     return model
 
+input_volume = [1549, 2560, 1157, 2065, 1801, 1514, 1842, 1211]
+output_volume = [1597, 998, 1157, 2078, 1427, 2210, 1730, 1671]
 
-def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4=1000, w5=70, w6=5, w7=1000, w8=70, w9=5):
+def solve(P=p_matrix, I=I_matrix, O=O_matrix,keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4=1000, w5=70, w6=5, w7=1000, w8=70, w9=5, input_volume=input_volume, output_volume=output_volume,lambda1 = 10, lambda2 = 10, max_time=10):
     model = cp_model.CpModel()
     solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = max_time
+
     num_x = P.shape[1]
     num_e = P.shape[0]
     etrue = [e_T[i] for i in range(num_e)] # numpy 자료형 에서 파이썬 형태로 바꿈.
@@ -77,9 +81,24 @@ def solve(P=p_matrix, keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=70, w3=5, w4
     for i in range(num_e):
         model.Add(error[i] == sum([P[i, j]*x[j] for j in range(num_x)]) - etrue[i])
         model.AddMultiplicationEquality(squared_error[i], [error[i], error[i]])
+    
+    num_iv = len(input_volume)
+    input_volume_error = [model.NewIntVar(-100000, 100000, f"input_volume_error_{i}") for i in range(num_iv)]
+    squared_input_volume_error = [model.NewIntVar(0, 10000000, f"squared_input_volume_error_{i}") for i in range(num_iv)]
+    
+    output_volume_error = [model.NewIntVar(-100000, 100000, f"output_volume_error_{i}") for i in range(num_iv)]
+    squared_output_volume_error = [model.NewIntVar(0, 10000000, f"squared_output_volume_error_{i}") for i in range(num_iv)]
 
-    sum_squared_error = model.NewIntVar(0, 1000000000, 'sum_squared_error')
-    model.Add(sum_squared_error == sum(squared_error[i] for i in range(num_e)))
+    for i in range(num_iv):
+        calculated_input_volume = sum([I[i, j] * x[j] for j in range(num_x)])
+        calculated_output_volume = sum([O[i, j]*x[j] for j in range(num_x)])
+        model.Add(input_volume_error[i] == input_volume[i] - calculated_input_volume)
+        model.Add(output_volume_error[i] == output_volume[i] - calculated_output_volume)
+        model.AddMultiplicationEquality(squared_input_volume_error[i], [input_volume_error[i], input_volume_error[i]])
+        model.AddMultiplicationEquality(squared_output_volume_error[i], [output_volume_error[i], output_volume_error[i]])
+  
+    sum_squared_error = model.NewIntVar(0, 10000000000, 'sum_squared_error')
+    model.Add(sum_squared_error == lambda1*sum(squared_error[i] for i in range(num_e)) + lambda2*sum(squared_input_volume_error[i] for i in range(num_iv)) + lambda2*sum(squared_output_volume_error[i] for i in range(num_iv)))
     model.Minimize(sum_squared_error)
 
 
