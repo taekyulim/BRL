@@ -317,6 +317,60 @@ def direction_from_angle(angle, straight_threshold=30, left_threshold=150):
         return "직진"
     
     
+def return_results(x):
+    result = {}
+    for i in range(len(x)):
+        if x[i] != 0:
+            path = all_shortest_paths[i]
+            origin_edge, destination_edge = edges[path[0]][0], edges[path[-1]][-1]
+            if (origin_edge, destination_edge) not in result:
+                result[(origin_edge, destination_edge)] = 0
+            result[(origin_edge, destination_edge)] += x[i]
+    return result
+
+def return_ratio(result):
+    grouped_dict = {}
+
+    # 딕셔너리의 키-값 쌍에 대해 반복
+    for key, value in result.items():
+        first_element = key[0]
+        
+        if first_element not in grouped_dict:
+            grouped_dict[first_element] = []
+        
+        grouped_dict[first_element].append((key, value))
+
+    # 비율을 저장할 딕셔너리
+    ratios = {}
+
+    # 각 그룹에 대해 반복
+    for first_element, group in grouped_dict.items():
+        total_value = sum(value for _, value in group)
+        
+        # 그룹 내의 키-값 쌍에 대해 반복하며 비율 계산
+        for key, value in group:
+            ratio = value / total_value
+            ratios[key] = round(100*ratio, 2)
+    
+    updated_ratios = {}
+
+    for key, value in ratios.items():
+        first_key, second_key = key
+        new_key = (node_index[first_key], node_index[second_key])
+        updated_ratios[new_key] = value
+    
+    return updated_ratios
+
+
+def get_ratio_matrix(x):
+    ratio_matrix = np.zeros((8,8))
+    result = return_results(x)
+    ratios = return_ratio(result)
+    for index in ratios:
+        ratio_matrix[index[0], index[1]] = ratios[index]
+    return ratio_matrix
+
+
 def find_input_list_index(index, input_list):
     cumulative_sum = 0
     for i, item in enumerate(input_list):

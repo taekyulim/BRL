@@ -96,7 +96,7 @@ def solve(P=p_matrix, I=I_matrix ,keys=crossroad_var_keys, e_T=e_T, w1=1000, w2=
     
     regularization_lambda = 1
         
-       # Calculate the L2 regularization term
+    # Calculate the L2 regularization term
     squared_x = [model.NewIntVar(0, 100000000, f"squared_x_{i}") for i in range(num_x)]
     for i in range(num_x):
         model.AddMultiplicationEquality(squared_x[i], [x[i], x[i]])
