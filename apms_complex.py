@@ -55,21 +55,6 @@ def extract_edge_from_xml_file(file_path):
             edges[edge_id] = [from_node, to_node]
     return edges
 
-# def extract_road_lengths(file_path):
-#     tree = parse(file_path)
-#     root = tree.getroot()
-#     lengths = {}
-    
-#     for edge in root.findall("edge"):
-#         edge_id = edge.get("id")
-#         distance = float(edge.get("length"))
-        
-#         if edge_id not in lengths:
-#             lengths[edge_id] = distance
-    
-#     return lengths
-
-
 def get_adjacent_edges(file_path):
     tree = parse(file_path)
     root = tree.getroot()
@@ -211,18 +196,6 @@ def return_all_routes(start_node, graph=graph):
             result.append(shortest_path)
     return result
 
-# def return_all_lengths(start_node, graph=graph):
-#     # start_node를 받으면 그 start node를 origin node로 하는 모든 최단경로의 길이를 반환
-#     result = []
-#     temp = copy.deepcopy(origin_nodes)
-#     temp.remove(start_node)
-#     for i in temp:
-#         routes = bfs_shortest_paths(start = start_node, end=i)
-#         for j in routes:
-#             _, shortest_length = get_shortest_edge_distance(j)
-#             result.append(shortest_length)
-#     return result
-
 def get_all_shortest_paths():
     """모든 최단 경로들을 반환하는 함수. 
     이때 메인 도로 'r{number}_{number}_{number}' 를 포함하지 않은 최단경로는 제거 하였음.
@@ -236,28 +209,7 @@ def get_all_shortest_paths():
     # filtered_list = [sublist for sublist in all_shortest_paths if any(elem.startswith('r') for elem in sublist)]
     return all_shortest_paths
 
-
 all_shortest_paths = get_all_shortest_paths() # 모든 최단 경로 출력
-
-# def get_all_shortest_lengths():
-#     """
-#     모든 최단 경로의 길이들을 반환 하는 함수.
-#     인덱스를 바탕으로 경로와 길이에 접근 가능.
-#     딕셔너리로 안하는 이유는 메모리 문제.
-#     """
-#     all_shortest_lengths = []
-#     for start_node in origin_nodes:
-#         temps = return_all_lengths(start_node)
-#         for temp_length in temps:
-#             if temp_length > 500:
-#             # # 500 보다 큰 경우에는 subnode에 의해 생성되는 거리 필터링 가능.
-#             # # 이거는 추후 논의 해볼 것.
-#                 pass
-#                 # all_shortest_lengths.append(temp_length)
-#     return all_shortest_lengths
-
-# all_shortest_lengths = get_all_shortest_lengths()
-
 
 def get_I_matrix():
     I_matrix = [[0] * len(all_shortest_paths) for _ in range(len(origin_nodes))]
@@ -277,25 +229,6 @@ def get_O_matrix():
 
 O_matrix = get_O_matrix()
 
-# def filter_routes(target_edge, start_node):
-#     # 특정 start node를 origin node로 했을 때 target_edge가 포함된 최단경로만 나오도록 함.
-#     all_routes = return_all_routes(start_node)
-#     filtered_routes = []
-#     for route in all_routes:
-#         if target_edge in route:
-#             filtered_routes.append(route)
-#     return filtered_routes
-
-# def get_edge_include_routes(target_edge):
-#     # 우리가 조사할 target edge를 입력했을때 그 target edge를 포함하는 모든 경로들 나옴.
-#     results = []
-#     for start_node in origin_nodes:
-#         all_routes = filter_routes(target_edge, start_node)
-#         for j in all_routes:
-#             if j != None:
-#                 results.append(j)
-#     return results
-
 def get_p_matrix():
     # 최적화에 쓰일 p matrix 만듬
     # p matrix를 활용하여 66개의 최단경로에 할당되는 교통량을 활용하여
@@ -310,52 +243,6 @@ def get_p_matrix():
     return np.array(p_matrix)
 
 p_matrix = get_p_matrix()
-
-# def angle_between_points(p1, p2, p3):
-#     """
-#     세 점이 있을때 각도를 구해주는 함수
-#     """
-#     x1, y1 = p1
-#     x2, y2 = p2
-#     x3, y3 = p3
-
-#     angle1 = math.atan2(y2-y1, x2-x1)
-#     angle2 = math.atan2(y3-y2, x3-x2)
-
-#     angle = angle2 - angle1
-#     angle = math.degrees(angle)
-
-#     return angle%360
-
-# def direction_from_angle(angle, straight_threshold=30, left_threshold=150):
-#     """
-#     angle_between_points로 부터 나온 각도값을 활용하여 직진, 우회전, 죄회전 하는 지 판단하는 함수
-#     """
-#     if straight_threshold <= angle <= 180 - straight_threshold:
-#         return "좌회전"
-#     elif 180 + straight_threshold <= angle <= 360 - straight_threshold:
-#         return "우회전"
-#     else:
-#         return "직진"
-
-# def get_start_info():
-#     start_info = [[] for _ in range(len(node_index))]
-#     for i in range(len(all_shortest_paths)):
-#         input_node = all_shortest_paths[i][0][:-1]
-#         start_info[node_index[input_node]].append(i)
-#     return start_info
-
-# start_info = get_start_info()
-
-# def get_end_info():
-#     end_info = [[[] for _ in range(len(node_index))] for _ in range(len(node_index))]
-#     for i in range(len(all_shortest_paths)):
-#         input_node, output_node = all_shortest_paths[i][0][:-1], all_shortest_paths[i][-1][:-1]
-#         input_index, output_index = node_index[input_node], node_index[output_node]
-#         end_info[input_index][output_index].append(i)
-#     return end_info
-
-# end_info = get_end_info()
 
 def return_results(x):
     result = {}
@@ -407,108 +294,6 @@ def get_ratio_matrix(x):
     result = return_results(x)
     ratios = return_ratio(result)
     for index in ratios:
-        ratio_matrix[index[0], index[1]] = ratios[index]
+        ratio_matrix[node_index_destination[index[1]], node_index_origin[index[0]]] = ratios[index]
     return ratio_matrix    
     
-# def find_input_list_index(index, input_list):
-#     cumulative_sum = 0
-#     for i, item in enumerate(input_list):
-#         cumulative_sum += item
-#         if index < cumulative_sum:
-#             return i
-#     return -1  # not found
-
-# def get_edge_id_from_value(value, edges=edges):
-#     for key, val in edges.items():
-#         if val == value:
-#             return key
-#     return False
-
-# def sorting_vehicle(root):
-#     vtypes = root.findall('vType')
-#     routes = root.findall('route')
-#     vehicles = root.findall('vehicle')
-    
-#     sorted_vehicles = sorted(vehicles, key=lambda v: int(v.get('depart')))
-    
-#     new_routes = Element('routes')
-    
-#     for vtype in vtypes:
-#         new_routes.append(vtype)
-    
-#     for route in routes:
-#         new_routes.append(route)
-        
-#     for vehicle in sorted_vehicles:
-#         new_routes.append(vehicle)
-    
-#     return new_routes
-
-# def indent(elem, level=0):
-#     i = "\n" + level*"  "
-#     if len(elem):
-#         if not elem.text or not elem.text.strip():
-#             elem.text = i + "  "
-#         if not elem.tail or not elem.tail.strip():
-#             elem.tail = i
-#         for elem in elem:
-#             indent(elem, level+1)
-#         if not elem.tail or not elem.tail.strip():
-#             elem.tail = i
-#     else:
-#         if level and (not elem.tail or not elem.tail.strip()):
-#             elem.tail = i
-
-# def make_route_xml(result):
-#     """
-#     route_number : 모델링할 vertex 번호
-#     traffic_volume : 
-#     """
-#     root = Element("routes")
-#     vType_attrib = {
-#         "accel" : "1.0",
-#         "decel" : "5.0",
-#         "id" : "Car",
-#         "length" : "2.0",
-#         "maxSpeed" : "70.0",
-#         "sigma" : "0.0"
-#     }
-#     # result = optimizer.solve()
-#     vType = Element("vType", attrib=vType_attrib)
-#     root.append(vType)
-#     temp = 0
-#     routes = [all_shortest_paths[i] for i in list(result.keys())]
-#     volumes = list(result.values())
-#     for i in range(len(routes)):
-#         temp_edges = ' '.join(routes[i])
-#         route_attrib = {
-#             "id" : f"route{i}",
-#             "edges" : temp_edges
-#         }
-#         route_tag = Element("route", attrib=route_attrib)
-#         root.append(route_tag)
-#         # route 태그까지 추가 완료.
-#     indices = []
-#     index = 0
-#     for item in volumes:
-#         for _ in range(item):
-#             indices.append(index)
-#             index += 1
-#     for i in indices:
-#         depart = np.random.randint(0, 3600)
-#         route_index = find_input_list_index(i, volumes)
-#         vehicle_attrib = {
-#             "depart" : f"{depart}",
-#             "id" : f"veh{i}",
-#             "route" : f"route{route_index}",
-#             "type" : "Car"
-#         }
-#         vehicle = Element("vehicle", attrib=vehicle_attrib)
-#         root.append(vehicle)
-    
-
-#     root = sorting_vehicle(root)
-#     indent(root)
-#     tree = ElementTree(root)
-#     file_name = "pangyo.rou.xml"
-#     tree.write(file_name, encoding="utf-8", xml_declaration=True)
